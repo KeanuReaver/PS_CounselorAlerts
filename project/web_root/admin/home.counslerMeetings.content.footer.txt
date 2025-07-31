@@ -1,0 +1,475 @@
+~[if#counselorAlertSchool.is.a.school]
+    ~[if#chkCounselorPrefs.~[displayprefuser:ucsd_counselor_alert]=1]
+    <div id="counselorHiddenDiv" class="hide" hidden>
+        <div id="counselor-alerts">
+        ~[if#checkCounselor.security.inrole=3]
+            <div id="counselor-alerts-no-counselor" class="feedback-alert" style="display: none">
+                <p><strong id="no-counselor-title"></strong></p>
+                <div id="no-counselor-content" style="display: none">
+                    
+                </div>
+            </div>
+            <div id="counselor-alerts-content-none" class="feedback-alert" style="display: none;">
+                <p><strong id="counselor-no-meetings-title"></strong></p>
+                <div id="counselor-no-meetings-content" style="display: none">
+                    <p>
+                        <strong>
+                            These students haven't had any logged counselor meetings - 
+                            <a href="#" class="build-selection" data-type="no-meeting">Make Current Selection</a>
+                        </strong>
+                    </p>
+                    ~[tlist_sql;
+                        SELECT
+                            counselCountTable.linkdcid AS linkdcid,
+                            counselCountTable.studcid AS studcid,
+                            counselCountTable.stunum AS stunum,
+                            counselCountTable.lname AS lname,
+                            counselCountTable.fname AS fname,
+                            counselCountTable.entrycode AS entrycode
+                        FROM
+                        (    
+                            SELECT
+                                students.dcid AS linkdcid,
+                                students.dcid AS studcid,
+                                students.student_number AS stunum,
+                                students.last_name AS lname,
+                                students.first_name AS fname,
+                                students.entrycode AS entrycode,
+                                (
+                                    SELECT 
+                                        count(u_cc_meetings.id)
+                                    FROM
+                                        u_cc_meetings
+                                        INNER JOIN terms ON terms.isyearrec = 1
+                                            AND terms.schoolid = ~(curschoolid)
+                                            AND terms.yearid = ~(curyearid)
+                                            AND u_cc_meetings.meeting_date BETWEEN terms.firstday AND terms.lastday
+                                    WHERE
+                                        u_cc_meetings.studentsdcid = students.dcid
+                                        AND u_cc_meetings.meeting_type = 'Counselor'
+                                ) AS meetings
+                            FROM
+                                studentcounselor
+                                INNER JOIN users ON users.dcid = studentcounselor.userdcid
+                                INNER JOIN students ON studentcounselor.studentdcid = students.dcid
+                                    AND students.building != 'MW'
+                                    AND students.schoolid = ~(curschoolid)
+                                    AND students.enroll_status = 0
+                            WHERE
+                                studentcounselor.userdcid = ~[x:users_dcid]
+                        ) counselCountTable
+                        WHERE
+                            counselCountTable.meetings = 0
+                        ORDER BY
+                            4
+                    ;]
+                    <div    id="~(linkdcid)" 
+                            class="no-counselor-meetings sensitive">
+                        <a href="/admin/students/cc_meetings.html?frn=001~(studcid)">~(stunum)</a> | name: ~(lname), ~(fname) | entrycode: ~(entrycode)
+                    </div>
+                    [/tlist_sql]
+                </div>
+            </div>
+
+            <div id="counselor-alerts-content-long" class="feedback-note" style="display: none">
+                <p><strong id="length-since-meeting-title"></strong></p>
+                <div id="length-since-meeting-content" style="display: none">
+                    <p>
+                        <strong>
+                            These students haven't had a meeting with you in ~[displayprefuser:ucsd_counselor_alert_length] days or more - 
+                            <a href="#" class="build-selection" data-type="meeting-long">Make Current Selection</a>
+                        </strong>
+                    </p>
+                    ~[tlist_sql;
+                        SELECT
+                            counselCountTable.linkdcid AS linkdcid,
+                            counselCountTable.studcid AS studcid,                                
+                            counselCountTable.stunum AS stunum,
+                            counselCountTable.lname AS lname,
+                            counselCountTable.fname AS fname,
+                            counselCountTable.entrycode AS entrycode,
+                            counselCountTable.last_meeting AS last_meeting
+                        FROM
+                        (    
+                            SELECT
+                                students.dcid AS linkdcid,
+                                students.dcid AS studcid,
+                                students.student_number AS stunum,
+                                students.last_name AS lname,
+                                students.first_name AS fname,
+                                students.entrycode AS entrycode,
+                                (
+                                    SELECT
+                                        max(u_cc_meetings.meeting_date) AS meet_date
+                                    FROM
+                                        u_cc_meetings
+                                        INNER JOIN terms ON terms.isyearrec = 1
+                                            AND terms.schoolid = ~(curschoolid)
+                                            AND terms.yearid = ~(curyearid)
+                                            AND u_cc_meetings.meeting_date BETWEEN terms.firstday AND terms.lastday
+                                    WHERE
+                                        u_cc_meetings.studentsdcid = students.dcid
+                                        AND u_cc_meetings.meeting_type = 'Counselor'
+                                ) last_meeting
+                            FROM
+                                studentcounselor
+                                INNER JOIN users ON users.dcid = studentcounselor.userdcid
+                                INNER JOIN students ON studentcounselor.studentdcid = students.dcid
+                                    AND students.schoolid = ~(curschoolid)
+                                    AND students.enroll_status = 0
+                                    AND students.building != 'MW'
+                                WHERE
+                                    studentcounselor.userdcid = ~[x:users_dcid]
+                        ) counselCountTable
+                        WHERE
+                            sysdate - to_number(~[displayprefuser:ucsd_counselor_alert_length]) > counselCountTable.last_meeting
+                        ORDER BY
+                            8
+                    ;]
+                    <div    id="~(linkdcid)" 
+                            class="meeting-long sensitive">
+                        <a href="/admin/students/cc_meetings.html?frn=001~(studcid)">~(stunum)</a> | name: ~(lname), ~(fname) | entrycode: ~(entrycode) | last meeting: ~(last_meeting)
+                    </div>
+                    [/tlist_sql]
+                </div>
+            </div>
+                    
+        [else#checkCounselor]       
+            <div id="counselor-alerts-no-counselor" class="feedback-alert" style="display: none">
+                <p><strong id="no-counselor-title"></strong></p>
+                <div id="no-counselor-content" style="display: none">
+                    
+                </div>
+            </div>
+            <div id="counselor-alerts-content-none" class="feedback-alert" style="display: none;">
+                <p><strong id="counselor-no-meetings-title"></strong></p>
+                <div id="counselor-no-meetings-content" style="display: none">
+                    <p>
+                        <strong>
+                            These students haven't had any logged meetings with their counselor - 
+                            <a href="#" class="build-selection" data-type="no-meeting">Make Current Selection</a>
+                        </strong>
+                    </p>
+                    ~[tlist_sql;
+                        SELECT
+                            counselCountTable.linkdcid AS linkdcid,
+                            counselCountTable.studcid AS studcid,
+                            counselCountTable.stunum AS stunum,
+                            counselCountTable.lname AS lname,
+                            counselCountTable.fname AS fname,
+                            counselCountTable.counselor_name AS counselor_name,
+                            counselCountTable.entrycode AS entrycode,
+                            counselCountTable.meetings
+                        FROM
+                        (    
+                            SELECT
+                                students.dcid AS linkdcid,
+                                students.dcid AS studcid,
+                                students.student_number AS stunum,
+                                students.last_name AS lname,
+                                students.first_name AS fname,
+                                users.lastfirst AS counselor_name,
+                                students.entrycode AS entrycode,
+                                (
+                                    SELECT 
+                                        count(u_cc_meetings.id)
+                                    FROM
+                                        u_cc_meetings
+                                        INNER JOIN terms ON terms.isyearrec = 1
+                                            AND terms.schoolid = ~(curschoolid)
+                                            AND terms.yearid = ~(curyearid)
+                                            AND u_cc_meetings.meeting_date BETWEEN terms.firstday AND terms.lastday
+                                    WHERE
+                                        u_cc_meetings.studentsdcid = students.dcid
+                                        AND u_cc_meetings.meeting_type = 'Counselor'
+                                ) AS meetings
+                            FROM
+                                studentcounselor
+                                INNER JOIN users ON users.dcid = studentcounselor.userdcid
+                                INNER JOIN students ON studentcounselor.studentdcid = students.dcid
+                                    AND students.schoolid = ~(curschoolid)
+                                    AND students.enroll_status = 0
+                                    AND students.building != 'MW'
+                        ) counselCountTable
+                        WHERE
+                            counselCountTable.meetings = 0
+                        ORDER BY
+                            4
+                    ;]
+                    <div    id="~(linkdcid)" 
+                            class="no-counselor-meetings sensitive">
+                        <a href="/admin/students/cc_meetings.html?frn=001~(studcid)">~(stunum)</a> | name: ~(lname), ~(fname) | counselor: ~(counselor_name) | entrycode: ~(entrycode)
+                    </div>
+                    [/tlist_sql]
+                </div>
+            </div>
+            <div id="counselor-alerts-content-long" class="feedback-note" style="display: none">
+                <p><strong id="length-since-meeting-title"></strong></p>
+                <div id="length-since-meeting-content" style="display: none">
+                    <p>
+                        <strong>
+                            These students haven't had a meeting with their counselor in over ~[displayprefuser:ucsd_counselor_alert_length] days - 
+                            <a href="#" class="build-selection" data-type="meeting-long">Make Current Selection</a>
+                        </strong>
+                    </p>
+                    ~[tlist_sql;
+                        SELECT
+                            counselCountTable.linkdcid AS linkdcid,
+                            counselCountTable.studcid AS studcid,                                
+                            counselCountTable.stunum AS stunum,
+                            counselCountTable.lname AS lname,
+                            counselCountTable.fname AS fname,
+                            counselCountTable.counselor_name AS counselor_name,
+                            counselCountTable.entrycode AS entrycode,
+                            to_char(counselCountTable.last_meeting, 'yyyy-MM-dd') AS last_meeting
+                        FROM
+                        (    
+                            SELECT
+                                students.dcid AS linkdcid,
+                                students.dcid AS studcid,
+                                students.student_number AS stunum,
+                                students.last_name AS lname,
+                                students.first_name AS fname,
+                                users.lastfirst AS counselor_name,
+                                students.entrycode AS entrycode,
+                                (
+                                    SELECT
+                                        max(u_cc_meetings.meeting_date) AS meet_date
+                                    FROM
+                                        u_cc_meetings
+                                        INNER JOIN terms ON terms.isyearrec = 1
+                                            AND terms.schoolid = ~(curschoolid)
+                                            AND terms.yearid = ~(curyearid)
+                                            AND u_cc_meetings.meeting_date BETWEEN terms.firstday AND terms.lastday
+                                    WHERE
+                                        u_cc_meetings.studentsdcid = students.dcid
+                                        AND u_cc_meetings.meeting_type = 'Counselor'
+                                ) last_meeting
+                            FROM
+                                studentcounselor
+                                INNER JOIN users ON users.dcid = studentcounselor.userdcid
+                                INNER JOIN students ON studentcounselor.studentdcid = students.dcid
+                                    AND students.schoolid = ~(curschoolid)
+                                    AND students.enroll_status = 0
+                                    AND students.building != 'MW'
+                        ) counselCountTable
+                        WHERE
+                            sysdate - to_number(~[displayprefuser:ucsd_counselor_alert_length]) > counselCountTable.last_meeting
+                        ORDER BY
+                            8
+                    ;]
+                    <div    id="~(linkdcid)" 
+                            class="meeting-long sensitive">
+                        <a href="/admin/students/cc_meetings.html?frn=001~(studcid)">~(stunum)</a> | name: ~(lname), ~(fname) | counselor: ~(counselor_name) | entrycode: ~(entrycode) | last meeting: ~(last_meeting)
+                    </div>
+                    [/tlist_sql]
+                </div>
+            </div>
+        [/if#checkCounselor]
+        </div>
+    </div>
+    <input type="hidden" id="counselor-split-string" value="~[prefschool:counselor_alerts_separators]">
+    <script type="text/javascript">
+        // Mutation Observer to dynamically deal with page loads as the target element has to reload with focus (student, staff, contact) is changed
+        // Doesn't need to be in the document load block as it already accomplishes this
+        function ucsdWaitForPageLoad(params) {
+            new MutationObserver(function(mutations) {
+                var el = document.getElementById(params.id);
+                if (el) {
+                    this.disconnect();
+                    params.done(el);
+                }
+            }).observe(params.parent || document, {
+                subtree: !!params.recursive || !params.parent,
+                childList: true,
+            });
+        }
+        ucsdWaitForPageLoad({
+            id: 'search_switch_btn',
+            parent: document.querySelector('.container'),
+            recursive: false,
+            done: function(el) {
+                $j('pss-studentsearch').prepend($j('#counselor-alerts'));
+            }
+        });
+        
+        $j(() => {
+            const counselorSplit = "~[prefschool:counselor_alerts_separators]" || 'AZ';
+            const noMeetingsCount = $j('.no-counselor-meetings').length || 0;
+            const longMeetingCount = $j('.meeting-long').length || 0;
+            
+            let noCounselorCount = 0;
+    
+            const nmMCS = $j('.no-counselor-meetings').map(function() {
+                    return this.id;
+                }).get().join(',') || '';
+                
+            const lmMCS = $j('.meeting-long').map(function() {
+                    return this.id;
+                }).get().join(',') || '';
+
+            
+            if (noMeetingsCount > 0) {
+                $j('#counselor-alerts-content-none').show();
+            }
+            if (longMeetingCount > 0) {
+                $j('#counselor-alerts-content-long').show();
+            }
+            
+            function getNoCounselor(firstLetter, lastLetter) {
+                const path = `/admin/counselor_alert_query/no_counselor_list.json?firstLetter=${firstLetter}&lastLetter=${lastLetter}`;
+
+                return $j.ajax({
+                    method: 'get',
+                    url: path,
+                    dataType: 'json'
+                }).then(response => {
+                    // Filter out any empty objects
+                    return response.filter(obj => Object.keys(obj).length !== 0);
+                }, error => {
+                    console.error('Error pulling tlist json:', error);
+                    throw error;
+                });
+            }
+            
+            function getNoCounselorSplits() {
+                // counselorSplit is assumed to be a comma-separated string like "AZ,BC,DE" etc.
+                const splits = counselorSplit.split(',').map(letterGroup => {
+                    const firstLetter = letterGroup[0];
+                    const lastLetter = letterGroup[1];
+
+                    // Return a promise that resolves to the desired object (or null)
+                    return getNoCounselor(firstLetter, lastLetter)
+                        .then(records => {
+                            if (records.length > 0) {
+                                noCounselorCount += records.length;
+                                return {
+                                    firstLetter: firstLetter,
+                                    lastLetter: lastLetter,
+                                    records: records
+                                };
+                            }
+                            return null;
+                        });
+                });
+                // Wait for all promises to resolve, then filter out any nulls.
+                return Promise.all(splits).then(results => results.filter(item => item !== null));
+            }
+            
+            function buildNoCounselorHtml() {
+                if (counselorSplit) {
+                    getNoCounselorSplits()
+                        .then(noCounselorData => {
+                            
+                            if (noCounselorData.length > 0) {
+                                $j('#counselor-alerts-no-counselor').show();
+                                $j('#no-counselor-title')
+                                    .css('cursor', 'pointer')
+                                    .text(`Students with no counselor assigned - ${ noCounselorCount } - (click to expand)`);
+                                let html = '';
+                                noCounselorData.forEach(range => {
+                                    html += `<p>
+                                                <strong>
+                                                  ${range.firstLetter} - ${range.lastLetter} students that have no counselor assigned to them (${range.records.length}) - 
+                                                  <a href="#" class="build-no-counselor" data-type="no-counselor-${range.firstLetter}${range.lastLetter}">
+                                                    Make ${range.firstLetter} - ${range.lastLetter} Current Selection and Assign
+                                                  </a>
+                                                </strong>
+                                             </p>`;
+                                    range.records.forEach(record => {
+                                        html += `<div id="${record.studcid}" class="no-counselor-${range.firstLetter}${range.lastLetter} sensitive">
+                                                   ${record.stunum} | name: ${record.lname}, ${record.fname} | entrycode: ${record.entrycode}
+                                                 </div>`;
+                                    });
+                                    html += '<br>';
+                                });
+                                $j('#no-counselor-content').html(html);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error building no counselor HTML:', error);
+                        });
+                }
+            }
+            
+            buildNoCounselorHtml();
+            
+            function buildNoCounselorSel(type) {
+                const ids = $j(`.${type}`)
+                    .map(function() { return this.id; })
+                    .get()
+                    .join(',') || '';
+                return `/admin/counselor/massassigncounselor.html?ac=buildsel;table=students;list=${ids}`;
+            }
+            
+            $j(document).on('click', '.build-no-counselor', function(e) {
+                e.preventDefault();
+
+                const type = $j(this).data('type');
+                const url = buildNoCounselorSel(type);
+                if (url) {
+                    window.location.href = url;
+                }
+            });
+            
+
+            function buildSelection(type) {
+                const config = {
+                    'no-meeting': {
+                        selector: '.no-counselor-meetings',
+                        baseUrl: '/admin/home.html?ac=buildsel;table=students;list='
+                    },
+                    'meeting-long': {
+                        selector: '.meeting-long',
+                        baseUrl: '/admin/home.html?ac=buildsel;table=students;list='
+                    },
+                    'no-counselor': {
+                        selector: '.no-counselor',
+                        baseUrl: '/admin/counselor/massassigncounselor.html?ac=buildsel;table=students;list='
+                    }
+                };
+                const cfg = config[type];
+                if (!cfg) {
+                    return '';
+                }
+                const ids = $j(cfg.selector)
+                    .map(function() { return this.id; })
+                    .get()
+                    .join(',') || '';
+
+                return `${cfg.baseUrl}${ids}`;
+            }
+
+            $j('.build-selection').on('click', function(e) {
+                e.preventDefault(); // Prevent default navigation
+                const type = $j(this).data('type'); // Get the type from the data attribute
+                const url = buildSelection(type);
+                if(url) {
+                    window.location.href = url;
+                }
+            });
+            
+                
+            $j('#counselor-no-meetings-title')
+                .css('cursor', 'pointer')
+                .text(`Students that haven't met with a counselor - ${ noMeetingsCount } - (click to expand)`);
+
+            $j('#length-since-meeting-title')
+                .css("cursor", "pointer")
+                .text(`Students exceeding set time since last meeting - ${ longMeetingCount } - (click to expand)`);
+
+            $j('#no-counselor-title').click(function() {
+                $j('#no-counselor-content').toggle();
+            });
+            
+            $j('#counselor-no-meetings-title').click(function() {
+                $j('#counselor-no-meetings-content').toggle();
+            });
+            
+            $j('#length-since-meeting-title').click(function() {
+                $j('#length-since-meeting-content').toggle();
+            });
+        });
+    </script>
+    [/if#chkCounselorPrefs]
+[/if#counselorAlertSchool]

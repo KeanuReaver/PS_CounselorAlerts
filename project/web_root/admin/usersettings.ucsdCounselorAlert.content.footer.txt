@@ -1,0 +1,70 @@
+<div id="ucsdCounselorAlerts">
+    <h2>UCSD Counselor Start Page Alerts</h2>
+    <div class="feedback-info">
+        <ul>
+            <li>Displays students with no counselor assigned</li>
+            <li>Displays students that have no counselor meetings</li>
+            <li>Displays students that haven't seen a counselor for a period of time (in days) specified below</li>
+        </ul>
+    </div>
+    <div class="fluid-form">
+        <div>
+            <div>
+                <input type="checkbox" name="[prefuser]ucsd_counselor_alert" id="ucsd_counselor_alert" value="1">
+                <label for="ucsd_counselor_alert" class="fluid-form-checkbox-label">
+                    Show Counselor Start Page Alerts
+                </label>
+            </div>
+        </div>
+        <div>
+            <div>
+                <label>Days since last meeting before including in start page alert:</label>
+            </div>
+            <div>
+                <input type="radio" class="cspa_placeholder" name="cspa_placeholder" id="ucsd_conselor_alert_length_30" value="30">
+                <label for="ucsd_conselor_alert_length_30" class="fluid-form-checkbox-label">
+                    30 days
+                </label>
+            </div>
+            <div></div>
+            <div></div>
+            <div>
+                <input type="radio" class="cspa_placeholder" name="cspa_placeholder" id="ucsd_conselor_alert_length_60" value="60">
+                <label for="ucsd_conselor_alert_length_60" class="fluid-form-checkbox-label">
+                    60 days
+                </label>
+            </div>
+            <div></div>
+            <div></div>
+            <div>
+                <input type="radio" class="cspa_placeholder" name="cspa_placeholder" id="ucsd_conselor_alert_length_90" value="90">
+                <label for="ucsd_conselor_alert_length_90" class="fluid-form-checkbox-label">
+                    90 days
+                </label>
+            </div>
+            <div></div>
+            <div></div>
+            <div>
+                <input type="radio" class="cspa_placeholder" name="cspa_placeholder" id="ucsd_conselor_alert_length_120" value="120">
+                <label for="ucsd_conselor_alert_length_120" class="fluid-form-checkbox-label">
+                    120 days
+                </label>
+            </div>
+            <input type="hidden" name="[prefuser]ucsd_counselor_alert_length" id="ucsd_counselor_alert_length_submit" value="30">
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    $j(() => {
+        $j('.fluid-multi-form:last').append($j('#ucsdCounselorAlerts').detach().html());
+        $j('.cspa_placeholder').on('change', function() {
+            const selectedValue = $j(this).val();
+            $j('#ucsd_counselor_alert_length_submit').val(selectedValue);
+        });
+        $j('.cspa_placeholder').each(function() {
+            if ($j(this).val() === $j('#ucsd_counselor_alert_length_submit').val()) {
+                $j(this).prop('checked', true);
+            }
+        });
+    });
+</script>

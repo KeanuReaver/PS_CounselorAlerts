@@ -1,0 +1,29 @@
+[
+    ~[tlist_sql;
+        SELECT
+            students.dcid AS studcid,
+            students.student_number AS stunum,
+            students.last_name AS lname,
+            students.first_name AS fname,
+            students.entrycode AS entrycode
+        FROM
+            students
+            LEFT JOIN studentcounselor ON studentcounselor.studentdcid = students.dcid
+        WHERE
+            studentcounselor.userdcid IS NULL
+            AND students.schoolid = ~(curschoolid)
+            AND students.enroll_status = 0
+            AND students.building != 'MW'
+            AND SUBSTR(UPPER(students.last_name), 1, 1) BETWEEN '~(gpv.firstLetter)' AND '~(gpv.lastLetter)'
+        ORDER BY
+            lname
+    ;]
+        {
+            "studcid": "~(studcid)",
+            "stunum": "~(stunum)",
+            "lname": "~(lname)",
+            "fname": "~(fname)",
+            "entrycode": "~(entrycode)"
+        },
+    [/tlist_sql]{}
+]

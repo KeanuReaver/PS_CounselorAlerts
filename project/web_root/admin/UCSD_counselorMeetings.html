@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>UCSD - Counselor Meetings</title>
+
+    ~[wc:commonscripts]
+
+    <link href="/images/css/screen.css" rel="stylesheet" media="screen">
+    <link href="/images/css/print.css" rel="stylesheet" media="print">
+</head>
+<body>
+    ~[wc:admin_header_css]
+    <!-- breadcrumb start <a href="first_link" target="_top">first</a> &gt; <a href="second_link" target="_top">Second</a> &gt; here-->UCSD - Counselor Meetings<!-- breadcrumb end -->
+    <!-- start of main menu and content -->
+    ~[wc:admin_navigation_css]
+    <!-- Start of Page -->
+    <h1>UCSD - Counselor Meetings</h1>
+    <!-- start of content area -->
+    ~[if#checkIfCounselor.security.inrole=3]
+        <div class="box-round">       
+            <table class="tableToGrid">
+                <thead>
+                    <tr>
+                        <th>Student Number</th>
+                        <th>Last</th>
+                        <th>First</th>
+                        <th>Grade</th>
+                        <th>Entry Code</th>
+                        <th>Meeting Count</th>
+                        <th>Last Meeting</th>
+                    </tr>
+                </thead>
+                <tbody>        
+                    ~[tlist_sql;
+                    SELECT
+                        chr(60)||'a href="/admin/students/UCSD_Counselor_Logs.html?frn=001'||to_char(students.dcid)||'" target="_blank"'||chr(62)||students.student_number||chr(60)||'/a'||chr(62) AS pageLink,
+                        students.last_name AS lname,
+                        students.first_name AS fname,
+                        students.grade_level AS glevel,
+                        students.entrycode AS entrycode,
+                        (
+                            SELECT 
+                                count(u_cc_meetings.id)
+                            FROM
+                                u_cc_meetings
+                                INNER JOIN terms ON terms.isyearrec = 1
+                                    AND terms.schoolid = ~(curschoolid)
+                                    AND terms.yearid = ~(curyearid)
+                                    AND u_cc_meetings.meeting_date BETWEEN terms.firstday AND terms.lastday
+                            WHERE
+                                u_cc_meetings.studentsdcid = students.dcid
+                                AND u_cc_meetings.meeting_type = 'Counselor'
+                        ) AS meetings
+                        (
+                            SELECT
+                                max(u_cc_meetings.meeting_date) AS meet_date
+                            FROM
+                                u_cc_meetings
+                                INNER JOIN terms ON terms.isyearrec = 1
+                                    AND terms.schoolid = ~(curschoolid)
+                                    AND terms.yearid = ~(curyearid)
+                                    AND u_cc_meetings.meeting_date BETWEEN terms.firstday AND terms.lastday
+                            WHERE
+                                u_cc_meetings.studentsdcid = students.dcid
+                                AND u_cc_meetings.meeting_type = 'Counselor'
+                        ) last_meeting
+                    FROM
+                        studentcounselor
+                        INNER JOIN users ON users.dcid = studentcounselor.userdcid
+                        INNER JOIN students ON studentcounselor.studentdcid = students.dcid
+                            AND students.schoolid = ~(curschoolid)
+                            AND students.enroll_status = 0
+                    WHERE
+                        users.dcid = ~[x:users_dcid]
+                    ;]
+                    <tr>
+                        <td>~(pagelink)</td>
+                        <td>~(lname)</td>
+                        <td>~(fname)</td>
+                        <td>~(glevel)</td>
+                        <td>~(entrycode)</td>
+                        <td>~(meetings)</td>
+                        <td>~(last_meeting)</td>
+                    </tr>
+                    [/tlist_sql]
+                </tbody>
+            </table>
+        </div>
+    [else#checkIfCounselor]
+        ~[if#checkAdmin.security.inrole=9]
+        <div class="box-round">
+            <table class="tableToGrid">
+                <thead>
+                    <th>Student Number</th>
+                    <th>Last</th>
+                    <th>First</th>
+                    <th>Grade</th>
+                    <th>Counselor</th>
+                    <th>Entry Code</th>
+                    <th>Meeting Count</th>
+                    <th>Last Meeting</th>
+                </thead>
+                <tbody>
+                ~[tlist_sql;
+                    SELECT
+                        chr(60)||'a href="/admin/students/UCSD_Counselor_Logs.html?frn=001'||to_char(students.dcid)||'" target="_blank"'||chr(62)||students.student_number||chr(60)||'/a'||chr(62) AS pageLink,
+                        students.last_name AS lname,
+                        students.first_name AS fname,
+                        students.grade_level AS glevel,
+                        users.lastfirst AS counselor_name,
+                        students.entrycode AS entrycode,
+                        (
+                            SELECT 
+                                count(u_cc_meetings.id)
+                            FROM
+                                u_cc_meetings
+                                INNER JOIN terms ON terms.isyearrec = 1
+                                    AND terms.schoolid = ~(curschoolid)
+                                    AND terms.yearid = ~(curyearid)
+                                    AND u_cc_meetings.meeting_date BETWEEN terms.firstday AND terms.lastday
+                            WHERE
+                                u_cc_meetings.studentsdcid = students.dcid
+                                AND u_cc_meetings.meeting_type = 'Counselor'
+                        ) AS meetings
+                        (
+                            SELECT
+                                max(u_cc_meetings.meeting_date) AS meet_date
+                            FROM
+                                u_cc_meetings
+                                INNER JOIN terms ON terms.isyearrec = 1
+                                    AND terms.schoolid = ~(curschoolid)
+                                    AND terms.yearid = ~(curyearid)
+                                    AND u_cc_meetings.meeting_date BETWEEN terms.firstday AND terms.lastday
+                            WHERE
+                                u_cc_meetings.studentsdcid = students.dcid
+                                AND u_cc_meetings.meeting_type = 'Counselor'
+                        ) last_meeting
+                    FROM
+                        studentcounselor
+                        INNER JOIN users ON users.dcid = studentcounselor.userdcid
+                        INNER JOIN students ON studentcounselor.studentdcid = students.dcid
+                            AND students.schoolid = ~(curschoolid)
+                            AND students.enroll_status = 0
+                    WHERE
+                        students.schoolid = ~(curschoolid)
+                ;]
+                <tr>
+                    <td>~(pagelink)</td>
+                    <td>~(lname)</td>
+                    <td>~(fname)</td>
+                    <td>~(glevel)</td>
+                    <td>~(counselor_name)</td>
+                    <td>~(entrycode)</td>
+                    <td>~(meetings)</td>
+                    <td>~(last_meeting)</td>
+                </tr>
+                [/tlist_sql]
+                </tbody>
+            </table>
+        </div>
+        
+        [else#checkAdmin]
+        <div class="feedback-error">Page Only Available to Counselors</div>
+        [/if#checkAdmin]
+    [/if#checkIfCounselor]
+    <!-- end of content area -->
+    ~[wc:admin_footer_css]
+</body>
+</html>

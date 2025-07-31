@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>UCSD - Counselor Start Page Alerts - School Prefs</title>
+
+    ~[wc:commonscripts]
+
+    <link href="/images/css/screen.css" rel="stylesheet" media="screen">
+    <link href="/images/css/print.css" rel="stylesheet" media="print">
+</head>
+<body>
+    ~[wc:admin_header_css]
+    <!-- breadcrumb start <a href="first_link" target="_top">first</a> &gt; <a href="second_link" target="_top">Second</a> &gt; here-->UCSD - Counselor Start Page Alerts - School Prefs<!-- breadcrumb end -->
+    <!-- start of main menu and content -->
+    ~[wc:admin_navigation_css]
+    <!-- Start of Page -->
+    <h1>UCSD - Counselor Start Page Alerts - School Prefs</h1>
+    <!-- start of content area -->
+    ~[if#checkSchool.is.a.school]
+    <form action="/~[self.page]?changesSaved=true" method="POST">
+        <div class="fluid-form">
+            <div>
+                <div>
+                    <label>Choose splitting of no counselor list</label>
+                    <!-- Container for the alphabet checkboxes -->
+                    <div id="alphabet-checkboxes">
+                        <script>
+                            // Generate checkboxes from A to Z
+                            for (var i = 65; i <= 90; i++) { // ASCII codes for A-Z
+                                var letter = String.fromCharCode(i);
+                                if(letter === 'A' || letter === 'Z'){
+                                    // A and Z are fixed (checked and disabled)
+                                    document.write('<label><input type="checkbox" class="alpha-boundary" value="' + letter + '" checked disabled> ' + letter + '</label> ');
+                                } else {
+                                    document.write('<label><input type="checkbox" class="alpha-boundary" value="' + letter + '"> ' + letter + '</label> ');
+                                }
+                            }
+                        </script>
+                    </div>
+                    <div class="feedback-info">
+                        Choose how to group students by selecting boundary letters. A and Z are always selected.
+                        When you select a letter, the next letter will automatically be selected.
+                        The final grouping will be saved as comma-separated pairs (e.g., "AL,MP,QT,UZ").
+                    </div>
+                    <input type="hidden" name="[prefschool]counselor_alerts_separators" id="counselor_alerts_separators" value="">
+                </div>
+            </div>
+        </div>
+    
+        <div class="button-row">
+            <input type="hidden" name="ac" value="prim">
+    	    ~[submitbutton]
+        </div>
+    </form>
+    
+    <script>
+        $j(document).ready(function() {
+    
+            $j('.alpha-boundary:not([disabled])').on('change', function() {
+                var $this = $j(this);
+                var letter = $this.val();
+                var isChecked = $this.is(':checked');
+                
+                // Only process when unchecking.
+                if (!isChecked) {
+                    var groupStr = $j('#counselor_alerts_separators').val();
+                    // Find the position of the letter in the grouping string.
+                    var index = groupStr.indexOf(letter);
+                    if (index !== -1) {
+                        // Check if the letter is immediately followed by a comma.
+                        if (index + 1 < groupStr.length && groupStr.charAt(index + 1) === ',') {
+                            // Uncheck the partner letter, which is two characters to the right.
+                            var partner = groupStr.charAt(index + 2);
+                            $j('.alpha-boundary[value="' + partner + '"]').prop('checked', false);
+                        }
+                        // Otherwise, if the letter is immediately preceded by a comma.
+                        else if (index - 1 >= 0 && groupStr.charAt(index - 1) === ',') {
+                            // Uncheck the partner letter, which is two characters to the left.
+                            var partner = groupStr.charAt(index - 2);
+                            $j('.alpha-boundary[value="' + partner + '"]').prop('checked', false);
+                        }
+                    }
+                } else {
+                    // When checking, look at the immediate right neighbor.
+                    var $next = $this.closest('label').nextAll('label').first().find('input.alpha-boundary:not([disabled])');
+                    if (letter === 'Y') {
+                            var $prev = $j('.alpha-boundary[value="X"]');
+                            if ($prev.length) {
+                                $prev.prop('checked', isChecked);
+                            }
+                    } else if ($next.length) {
+                        if ($next.is(':checked')) {
+                            // If the right neighbor is already checked, auto-check the immediate left neighbor.
+                            var $prev = $this.closest('label').prevAll('label').first().find('input.alpha-boundary:not([disabled])');
+                            if ($prev.length && !$prev.is(':checked')) {
+                                $prev.prop('checked', true);
+                            }
+                        } else {
+                            // Otherwise, check the right neighbor.
+                            $next.prop('checked', true);
+                        }
+                    }
+                }
+                updateGroupString();
+            });
+            
+            function updateGroupString() {
+                // Gather the checked boundaries in DOM order.
+                var boundaries = [];
+                $j('.alpha-boundary').each(function() {
+                    if ($j(this).is(':checked')) {
+                        boundaries.push($j(this).val());
+                    }
+                });
+                // Ensure that A and Z are always present.
+                if (boundaries[0] !== 'A') { boundaries.unshift('A'); }
+                if (boundaries[boundaries.length - 1] !== 'Z') { boundaries.push('Z'); }
+                
+                // For the intermediate letters, assume they come in pairs.
+                // If the count is odd, drop the last orphan.
+                var inter = boundaries.slice(1, boundaries.length - 1);
+                if (inter.length % 2 !== 0) {
+                    inter.pop();
+                }
+                boundaries = [boundaries[0]].concat(inter, [boundaries[boundaries.length - 1]]);
+                
+                // Form pairs (every two adjacent letters).
+                var pairs = [];
+                for (var i = 0; i < boundaries.length; i += 2) {
+                    pairs.push(boundaries[i] + boundaries[i+1]);
+                }
+                var groupString = pairs.join(',');
+                $j('#counselor_alerts_separators').val(groupString);
+                console.log("Updated grouping string:", groupString);
+            }
+            
+            // On page load, if a saved grouping exists, restore the state.
+            var savedGroupString = $j('#counselor_alerts_separators').val();
+            if (savedGroupString && savedGroupString.trim().length > 0) {
+                // Uncheck all non-fixed checkboxes.
+                $j('.alpha-boundary:not([disabled])').prop('checked', false);
+                var pairs = savedGroupString.split(',');
+                pairs.forEach(function(pair) {
+                    if (pair.length >= 2) {
+                        $j('.alpha-boundary[value="' + pair.charAt(0) + '"]').prop('checked', true);
+                        $j('.alpha-boundary[value="' + pair.charAt(1) + '"]').prop('checked', true);
+                    }
+                });
+            }
+            
+            // Always update grouping string at end.
+            updateGroupString();
+        });
+
+
+    </script>
+    [/if#checkSchool]
+    <!-- end of content area -->
+    ~[wc:admin_footer_css]
+</body>
+</html>
