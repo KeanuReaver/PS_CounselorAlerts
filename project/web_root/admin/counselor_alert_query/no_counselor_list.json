@@ -5,7 +5,8 @@
             students.student_number AS stunum,
             students.last_name AS lname,
             students.first_name AS fname,
-            students.entrycode AS entrycode
+            students.entrycode AS entrycode,
+            students.grade_level AS grade_level
         FROM
             students
             LEFT JOIN studentcounselor ON studentcounselor.studentdcid = students.dcid
@@ -23,7 +24,8 @@
             "stunum": "~(stunum)",
             "lname": "~(lname)",
             "fname": "~(fname)",
-            "entrycode": "~(entrycode)"
+            "entrycode": "~(entrycode)",
+            "grade_level": "~(grade_level)"
         },
     [/tlist_sql]{}
 ]

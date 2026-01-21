@@ -1,14 +1,16 @@
 ~[if#counselorAlertSchool.is.a.school]
-    ~[if#chkCounselorPrefs.~[displayprefuser:ucsd_counselor_alert]=1]
     <div id="counselorHiddenDiv" class="hide" hidden>
         <div id="counselor-alerts">
         ~[if#checkCounselor.security.inrole=3]
+            ~[if#checkmh1.~(curschoolid) in ("109")]
             <div id="counselor-alerts-no-counselor" class="feedback-alert" style="display: none">
                 <p><strong id="no-counselor-title"></strong></p>
                 <div id="no-counselor-content" style="display: none">
                     
                 </div>
             </div>
+            [/if#checkmh1]
+            ~[if#chkCounselorPrefs1.~[displayprefuser:ucsd_counselor_alert]=1]
             <div id="counselor-alerts-content-none" class="feedback-alert" style="display: none;">
                 <p><strong id="counselor-no-meetings-title"></strong></p>
                 <div id="counselor-no-meetings-content" style="display: none">
@@ -133,14 +135,17 @@
                     [/tlist_sql]
                 </div>
             </div>
-                    
-        [else#checkCounselor]       
+            [/if#chkCounselorPrefs1]        
+        [else#checkCounselor]
+            ~[if#checkmh2.~(curschoolid) in ("109")]
             <div id="counselor-alerts-no-counselor" class="feedback-alert" style="display: none">
                 <p><strong id="no-counselor-title"></strong></p>
                 <div id="no-counselor-content" style="display: none">
                     
                 </div>
             </div>
+            [/if#checkmh2]
+            ~[if#chkCounselorPrefs2.~[displayprefuser:ucsd_counselor_alert]=1]
             <div id="counselor-alerts-content-none" class="feedback-alert" style="display: none;">
                 <p><strong id="counselor-no-meetings-title"></strong></p>
                 <div id="counselor-no-meetings-content" style="display: none">
@@ -265,10 +270,12 @@
                     [/tlist_sql]
                 </div>
             </div>
+            [/if#chkCounselorPrefs2] 
         [/if#checkCounselor]
         </div>
     </div>
     <input type="hidden" id="counselor-split-string" value="~[prefschool:counselor_alerts_separators]">
+
     <script type="text/javascript">
         // Mutation Observer to dynamically deal with page loads as the target element has to reload with focus (student, staff, contact) is changed
         // Doesn't need to be in the document load block as it already accomplishes this
@@ -378,7 +385,7 @@
                                              </p>`;
                                     range.records.forEach(record => {
                                         html += `<div id="${record.studcid}" class="no-counselor-${range.firstLetter}${range.lastLetter} sensitive">
-                                                   ${record.stunum} | name: ${record.lname}, ${record.fname} | entrycode: ${record.entrycode}
+                                                   ${record.stunum} | name: ${record.lname}, ${record.fname} | entrycode: ${record.entrycode} | grade_level: ${record.grade_level}
                                                  </div>`;
                                     });
                                     html += '<br>';
@@ -471,5 +478,4 @@
             });
         });
     </script>
-    [/if#chkCounselorPrefs]
 [/if#counselorAlertSchool]
